@@ -83,6 +83,11 @@ module.exports = new Datasource('es', {
       name: 'url',
       types: ['string', 'null'],
       help: 'Elasticsearch server URL, eg http://localhost:9200'
+    },
+    {
+      name: 'value',
+      types: ['string', 'null'],
+      help: 'Key of the output to pull in case a multi value aggregation is used'
     }
   ],
   help: 'Pull data from an elasticsearch instance',
@@ -112,7 +117,14 @@ module.exports = new Datasource('es', {
       var data = _.map(resp.aggregations.series.buckets, function (bucket) {
         var value;
         if (resp.aggregations.series.buckets[0].metric != null) {
-          value = bucket.metric.value;
+          if(bucket.metric.values) {
+            if(!args.byName.value) {
+              throw new Error('Multi Value aggregations require the value argument');
+            }
+            value = bucket.metric.values[args.byName.value];
+          } else {
+            value = bucket.metric.value;
+          }
         } else {
           value = bucket.doc_count;
         }
@@ -135,4 +147,3 @@ module.exports = new Datasource('es', {
     });
   }
 });
-
